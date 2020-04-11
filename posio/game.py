@@ -5,6 +5,10 @@ import os
 from math import sqrt, pi
 from collections import namedtuple
 
+free_colors = ['orange', 'black', 'gold', 'violet', 'grey', 'yellow']
+colors_mapped = {}
+col_map_changed = False
+
 Answer = namedtuple('Answer', ['latitude', 'longitude'])
 Result = namedtuple('Result', ['distance', 'score'])
 
@@ -28,12 +32,20 @@ class Game:
         self.turn_number = 0
 
     def add_player(self, player_sid, player_name):
+        global col_map_changed
         self.players[player_sid] = Player(player_sid, player_name)
+        if len(free_colors) > 0:
+            colors_mapped[player_sid] = (player_name, free_colors.pop())
+            col_map_changed = True
 
     def remove_player(self, player_sid):
+        global col_map_changed
+
         # Get the player corresponding to the given sid and remove it
         if player_sid in self.players:
             del self.players[player_sid]
+            free_colors.append(colors_mapped.pop(player_sid)[1])
+            col_map_changed = True
 
     def start_new_turn(self):
         # Reset answers for this turn

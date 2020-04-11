@@ -1,5 +1,5 @@
 # How long is given to players to answer a question
-MAX_RESPONSE_TIME = 8
+MAX_RESPONSE_TIME = 11
 
 # Number of seconds between each turns
 TIME_BETWEEN_TURNS = 10

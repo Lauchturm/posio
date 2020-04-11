@@ -2,6 +2,7 @@
 
 from app import socketio, app
 from posio.game import Game
+from posio.game import colors_mapped
 
 
 class GameMaster:
@@ -42,6 +43,9 @@ class GameMaster:
             # Send the new leaderboard to players
             self.update_leaderboard()
 
+            # send the new legend to players (only joining and leaving changes it)
+            self.update_legend()
+
             # Give the user some time between two turns
             socketio.sleep(self.time_between_turns)
 
@@ -78,11 +82,11 @@ class GameMaster:
         city = self.game.get_current_city()
         turn_results = {
             'correct_answer':
-            {
-                'name': city['name'],
-                'lat': city['latitude'],
-                'lng': city['longitude'],
-            }
+                {
+                    'name': city['name'],
+                    'lat': city['latitude'],
+                    'lng': city['longitude'],
+                }
         }
 
         if player_count > 0:
@@ -98,16 +102,19 @@ class GameMaster:
             }
             if player_count > 1:
                 other_answers = []
-                for p in ranked_players[1:]:
+                for i, p in enumerate(ranked_players[1:]):
                     p_result = p.get_result(self.game.turn_number)
                     p_answer = p.get_answer(self.game.turn_number)
-                    other_answers.append({
+                    p_emit = {
                         'sid': p.sid,
                         'name': p.name,
                         'distance': p_result.distance,
                         'lat': p_answer.latitude,
                         'lng': p_answer.longitude,
-                    })
+                    }
+                    if len(ranked_players) <= 6:
+                        p_emit['color'] = colors_mapped[p.sid][1]
+                    other_answers.append(p_emit)
 
                 turn_results['other_answers'] = other_answers
 
@@ -150,3 +157,15 @@ class GameMaster:
                     'player_score': score['score'],
                 },
                 room=score['player'].sid)
+
+    def update_legend(self):
+        from posio.game import col_map_changed
+        if col_map_changed:
+            app.logger.debug('Updating legend')
+
+            socketio.emit(
+                'legend_changes',
+                {i + 1: player_name_and_color for i, player_name_and_color in enumerate(colors_mapped.values())}
+            )
+
+            col_map_changed = False

@@ -25,6 +25,7 @@ ZOOM_LEVEL = min(app.config.get('ZOOM_LEVEL'), 2)
 # CDN Url for static ressources
 CDN_URL = app.config.get('CDN_URL')
 
+
 # Create the game master and start the game
 game_master = GameMaster(SCORE_MAX_DISTANCE,
                          LEADERBOARD_ANSWER_COUNT,

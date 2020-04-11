@@ -29,7 +29,7 @@ $(document).ready(function () {
     markerGroup = new L.LayerGroup().addTo(map);
 
     // Look for a previously entered player name in local storage
-    if (typeof(Storage) !== "undefined" && localStorage.getItem(playerNameStorage)) {
+    if (typeof (Storage) !== "undefined" && localStorage.getItem(playerNameStorage)) {
 
         // If player name found, start the game using it
         joinGame(localStorage.getItem(playerNameStorage));
@@ -83,6 +83,13 @@ function createMap() {
     legend.onAdd = function (map) {
         var div = L.DomUtil.create('div', 'info');
         div.id = 'legend';
+        div.innerHTML += '<img height="20" width="12" src="' + cdnUrl + '/images/marker-icon-yellow.png' + '" alt="Player6"/> <span id="legend_player_1">Nobody</span><br>';
+        div.innerHTML += '<img height="20" width="12" src="' + cdnUrl + '/images/marker-icon-grey.png' + '" alt="Player5"/> <span id="legend_player_2">Nobody</span><br>';
+        div.innerHTML += '<img height="20" width="12" src="' + cdnUrl + '/images/marker-icon-violet.png' + '" alt="Player4"/> <span id="legend_player_3">Nobody</span><br>';
+        div.innerHTML += '<img height="20" width="12" src="' + cdnUrl + '/images/marker-icon-gold.png' + '" alt="Player3"/> <span id="legend_player_4">Nobody</span><br>';
+        div.innerHTML += '<img height="20" width="12" src="' + cdnUrl + '/images/marker-icon-black.png' + '" alt="Player2"/> <span id="legend_player_5">Nobody</span><br>';
+        div.innerHTML += '<img height="20" width="12" src="' + cdnUrl + '/images/marker-icon-orange.png' + '" alt="Player1"/> <span id="legend_player_6">Nobody</span><br>';
+
         div.innerHTML += '<img height="20" width="12" src="' + cdnUrl + '/images/marker-icon-blue.png' + '" alt="Your answer"/> Your answer<br>';
         div.innerHTML += '<img height="20" width="12" src="' + cdnUrl + '/images/marker-icon-red.png' + '" alt="Correct answer"/> Correct answer<br>';
         div.innerHTML += '<img height="20" width="12" src="' + cdnUrl + '/images/marker-icon-green.png' + '" alt="Best answer"/> Closest answer<br>';
@@ -125,7 +132,7 @@ function login() {
         } else {
 
             // Store player name if possible
-            if (typeof(Storage) !== "undefined") {
+            if (typeof (Storage) !== "undefined") {
                 localStorage.setItem(playerNameStorage, playerName);
             }
 
@@ -227,6 +234,8 @@ function handleNewTurn(data) {
     // Handle player results
     socket.on('player_results', showPlayerResults);
 
+    // Handle legend changes
+    socket.on('legend_changes', handleLegendChanges);
 }
 
 /**
@@ -251,14 +260,18 @@ function handleEndOfTurn(data) {
     // Show best answer if there is one
     if (data.best_answer) {
         var bestMarker = createMarker(data.best_answer.lat, data.best_answer.lng, 'green');
-        bestMarker.bindPopup('Closest answer (<b>' + data.best_answer.name + round(data.best_answer.distance) + ' km</b> away)');
+        bestMarker.bindPopup('Closest answer (<b>' + data.best_answer.name + ': ' + round(data.best_answer.distance) + ' km</b> away)').openPopup();
     }
 
     if (data.other_answers) {
         for (i = 0; i < data.other_answers.length; i++) {
             var tmp_answer = data.other_answers[i];
-            var tmp_Marker = createMarker(tmp_answer.lat, tmp_answer.lng, 'orange');
-            tmp_Marker.bindPopup(tmp_answer.name + ': <b>'+ round(data.best_answer.distance) + ' km</b> away');
+            if (tmp_answer.color) {
+                var tmp_Marker = createMarker(tmp_answer.lat, tmp_answer.lng, tmp_answer.color);
+            } else {
+                var tmp_Marker = createMarker(tmp_answer.lat, tmp_answer.lng, 'orange');
+            }
+            tmp_Marker.bindPopup(tmp_answer.name + ': <b>' + round(tmp_answer.distance) + ' km</b> away');
         }
     }
 
@@ -292,12 +305,23 @@ function showPlayerResults(data) {
 
     resultsText += '<br/>You are <b>#' + data.rank + '</b> out of <b>' + data.total + '</b> player(s) for this turn</div>';
 
-    userMarker.bindPopup(resultsText).openPopup();
+    // userMarker.bindPopup(resultsText).openPopup();
+    userMarker.bindPopup(resultsText);
 
     if (data.score != 0) {
         // Animate player score
         animateValue('score_value', data.score);
     }
+
+}
+
+function handleLegendChanges(data) {
+    console.log(data);
+    for (i = 1; i < 6; i++) {
+        $('#legend_player_' + i).html(data[i][0]);
+        console.log(i);
+    }
+    // $('#user_rank_value').html('(' + (data.player_rank + 1) + ' / ' + data.total_player + ' players)');
 
 }
 
