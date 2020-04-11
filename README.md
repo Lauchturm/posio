@@ -1,3 +1,6 @@
+only tiny changes from my side (@Lauchturm). Mostly regarding the end of the turn displaying all answers instead of 
+only the best.
+
 # Posio
 
 A multiplayer geography game using Websockets.

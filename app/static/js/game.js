@@ -75,7 +75,7 @@ function createMap() {
 
     });
 
-    map.doubleClickZoom.disable();
+    // map.doubleClickZoom.disable();
 
     // Add a legend in the bottom left corner
     var legend = L.control({position: 'bottomleft'});
@@ -250,10 +250,16 @@ function handleEndOfTurn(data) {
 
     // Show best answer if there is one
     if (data.best_answer) {
-
         var bestMarker = createMarker(data.best_answer.lat, data.best_answer.lng, 'green');
-        bestMarker.bindPopup('Closest answer (<b>' + round(data.best_answer.distance) + ' km</b> away)');
+        bestMarker.bindPopup('Closest answer (<b>' + data.best_answer.name + round(data.best_answer.distance) + ' km</b> away)');
+    }
 
+    if (data.other_answers) {
+        for (i = 0; i < data.other_answers.length; i++) {
+            var tmp_answer = data.other_answers[i];
+            var tmp_Marker = createMarker(tmp_answer.lat, tmp_answer.lng, 'orange');
+            tmp_Marker.bindPopup(tmp_answer.name + ': <b>'+ round(data.best_answer.distance) + ' km</b> away');
+        }
     }
 
     // Show correct answer

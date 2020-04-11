@@ -86,13 +86,30 @@ class GameMaster:
         }
 
         if player_count > 0:
-            best_result = ranked_players[0].get_result(self.game.turn_number)
-            best_answer = ranked_players[0].get_answer(self.game.turn_number)
+            best_player = ranked_players[0]
+            best_result = best_player.get_result(self.game.turn_number)
+            best_answer = best_player.get_answer(self.game.turn_number)
             turn_results['best_answer'] = {
+                'sid': best_player.sid,
+                'name': best_player.name,
                 'distance': best_result.distance,
                 'lat': best_answer.latitude,
                 'lng': best_answer.longitude
             }
+            if player_count > 1:
+                other_answers = []
+                for p in ranked_players[1:]:
+                    p_result = p.get_result(self.game.turn_number)
+                    p_answer = p.get_answer(self.game.turn_number)
+                    other_answers.append({
+                        'sid': p.sid,
+                        'name': p.name,
+                        'distance': p_result.distance,
+                        'lat': p_answer.latitude,
+                        'lng': p_answer.longitude,
+                    })
+
+                turn_results['other_answers'] = other_answers
 
         socketio.emit('end_of_turn', turn_results)
 
