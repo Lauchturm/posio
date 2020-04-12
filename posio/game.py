@@ -27,14 +27,18 @@ class Game:
         self.players = {}
         self.answers = []
         self.turn_number = 0
-        self.free_colors = ['orange', 'black', 'gold', 'violet', 'grey', 'yellow']
+        self.free_colors = ['black', 'orange', 'gold', 'violet',  'yellow', 'green', 'blue']  # 'grey' for all others
         self.legend_color_order = reversed(self.free_colors)
         self.colors_mapped = {}
 
     def add_player(self, player_sid, player_name):
+        from app import socketio  # TODO ugly to send here? all other emits are from game_master.py
         self.players[player_sid] = Player(player_sid, player_name)
         if len(self.free_colors) > 0:
             self.colors_mapped[player_sid] = (player_name, self.free_colors.pop())
+            socketio.emit('color_inform',
+                          self.colors_mapped[player_sid][1],
+                          room=player_sid)
             # self.col_map_changed = True  # TODO helpful to only update legend on changes or unnecessary?
 
     def remove_player(self, player_sid):
@@ -92,6 +96,10 @@ class Game:
             reverse=True)
 
         return ranked_players
+
+    # def get_current_turn_results(self):
+    #     current_turn_players_results = {player_sid: player.get_result(self.turn_number).score for player_sid, player in self.players.items() if player.has_played(self.turn_number)}  # noqa
+    #     return current_turn_players_results
 
     def get_ranked_scores(self):
         # Get scores for each players

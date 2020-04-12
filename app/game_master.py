@@ -89,50 +89,68 @@ class GameMaster:
         }
 
         if player_count > 0:
-            best_player = ranked_players[0]
-            best_result = best_player.get_result(self.game.turn_number)
-            best_answer = best_player.get_answer(self.game.turn_number)
-            turn_results['best_answer'] = {
-                'sid': best_player.sid,
-                'name': best_player.name,
-                'distance': best_result.distance,
-                'lat': best_answer.latitude,
-                'lng': best_answer.longitude
-            }
-            if player_count > 1:
-                other_answers = []
-                for i, p in enumerate(ranked_players[1:]):
-                    p_result = p.get_result(self.game.turn_number)
-                    p_answer = p.get_answer(self.game.turn_number)
-                    p_emit = {
-                        'sid': p.sid,
-                        'name': p.name,
-                        'distance': p_result.distance,
-                        'lat': p_answer.latitude,
-                        'lng': p_answer.longitude,
-                    }
-                    if len(ranked_players) <= 6:
-                        p_emit['color'] = self.game.colors_mapped[p.sid][1]
-                    other_answers.append(p_emit)
-
-                turn_results['other_answers'] = other_answers
+            answers = []
+            for i, p in enumerate(ranked_players):
+                p_result = p.get_result(self.game.turn_number)
+                p_answer = p.get_answer(self.game.turn_number)
+                p_emit = {
+                    'sid': p.sid,
+                    'name': p.name,
+                    'distance': p_result.distance,
+                    'lat': p_answer.latitude,
+                    'lng': p_answer.longitude,
+                }
+                try:
+                    p_emit['color'] = self.game.colors_mapped[p.sid][1]
+                except KeyError:
+                    p_emit['color'] = 'grey'
+                answers.append(p_emit)
+            turn_results['answers'] = answers
+        # if player_count > 0:
+        #     best_player = ranked_players[0]
+        #     best_result = best_player.get_result(self.game.turn_number)
+        #     best_answer = best_player.get_answer(self.game.turn_number)
+        #     turn_results['best_answer'] = {
+        #         'sid': best_player.sid,
+        #         'name': best_player.name,
+        #         'distance': best_result.distance,
+        #         'lat': best_answer.latitude,
+        #         'lng': best_answer.longitude
+        #     }
+        #     if player_count > 1:
+        #         other_answers = []
+        #         for i, p in enumerate(ranked_players[1:]):
+        #             p_result = p.get_result(self.game.turn_number)
+        #             p_answer = p.get_answer(self.game.turn_number)
+        #             p_emit = {
+        #                 'sid': p.sid,
+        #                 'name': p.name,
+        #                 'distance': p_result.distance,
+        #                 'lat': p_answer.latitude,
+        #                 'lng': p_answer.longitude,
+        #             }
+        #             if len(ranked_players) <= 6:
+        #                 p_emit['color'] = self.game.colors_mapped[p.sid][1]
+        #             other_answers.append(p_emit)
+        #
+        #         turn_results['other_answers'] = other_answers
 
         socketio.emit('end_of_turn', turn_results)
 
         # Then send individual player results
-        for rank, player in enumerate(ranked_players):
-            result = player.get_result(self.game.turn_number)
-            answer = player.get_answer(self.game.turn_number)
-            socketio.emit('player_results',
-                          {
-                              'rank': rank + 1,
-                              'total': player_count,
-                              'distance': result.distance,
-                              'score': result.score,
-                              'lat': answer.latitude,
-                              'lng': answer.longitude,
-                          },
-                          room=player.sid)
+        # for rank, player in enumerate(ranked_players):
+        #     result = player.get_result(self.game.turn_number)
+        #     answer = player.get_answer(self.game.turn_number)
+        #     socketio.emit('player_results',
+        #                   {
+        #                       'rank': rank + 1,
+        #                       'total': player_count,
+        #                       'distance': result.distance,
+        #                       'score': result.score,
+        #                       'lat': answer.latitude,
+        #                       'lng': answer.longitude,
+        #                   },
+        #                   room=player.sid)
 
     def update_leaderboard(self):
         app.logger.debug('Updating leaderboard')
@@ -160,7 +178,20 @@ class GameMaster:
     def update_legend(self):
         app.logger.debug('Updating legend')
 
-        legend_changes = [(player_name_and_color[1], player_name_and_color[0]) for player_sid, player_name_and_color in self.game.colors_mapped.items()]
+        legend_changes = []
+
+        ranks = self.game.get_current_turn_ranks()
+        for p in ranks:
+            p_name, p_color = self.game.colors_mapped[p.sid]
+            legend_changes.append((p_name, p_color, p.get_result(self.game.turn_number).distance))
+
+        # for player_sid, player_name_and_color in self.game.colors_mapped.items():
+        #     legend_item = [player_name_and_color[1], player_name_and_color[0]]
+        #     if len(current_turn_players_results) > 0:
+        #         legend_item.append(current_turn_players_results[player_sid])
+        #     else:
+        #         legend_item.append(0)
+        #     legend_changes.append(legend_item)
         socketio.emit(
             'legend_changes',
             legend_changes

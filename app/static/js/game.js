@@ -3,7 +3,8 @@ var map = null,
     markerGroup = null,
     socket = null,
     allowMultipleAnswer = false,
-    playerNameStorage = 'player_name';
+    playerNameStorage = 'player_name',
+    playerColor = 'blue';
 
 $(document).ready(function () {
 
@@ -85,9 +86,9 @@ function createMap() {
         div.id = 'legend';
         div.innerHTML += '<div id="legend_players"></div>';
 
-        div.innerHTML += '<img height="20" width="12" src="' + cdnUrl + '/images/marker-icon-blue.png' + '" alt="Your answer"/> Your answer<br>';
+        // div.innerHTML += '<img height="20" width="12" src="' + cdnUrl + '/images/marker-icon-blue.png' + '" alt="Your answer"/> Your answer<br>';
         div.innerHTML += '<img height="20" width="12" src="' + cdnUrl + '/images/marker-icon-red.png' + '" alt="Correct answer"/> Correct answer<br>';
-        div.innerHTML += '<img height="20" width="12" src="' + cdnUrl + '/images/marker-icon-green.png' + '" alt="Best answer"/> Closest answer<br>';
+        // div.innerHTML += '<img height="20" width="12" src="' + cdnUrl + '/images/marker-icon-green.png' + '" alt="Best answer"/> Closest answer<br>';
         return div;
     };
 
@@ -160,6 +161,8 @@ function joinGame(playerName) {
     // Join the default game
     socket.emit('join_game', playerName);
 
+    // Handle color inform
+    socket.on('color_inform', handleColorInform);
 }
 
 /**
@@ -231,6 +234,9 @@ function handleNewTurn(data) {
 
     // Handle legend changes
     socket.on('legend_changes', handleLegendChanges);
+
+    // Handle color inform
+    socket.on('color_inform', handleColorInform);
 }
 
 /**
@@ -252,21 +258,30 @@ function handleEndOfTurn(data) {
     // Clear markers
     markerGroup.clearLayers();
 
-    // Show best answer if there is one
-    if (data.best_answer) {
-        var bestMarker = createMarker(data.best_answer.lat, data.best_answer.lng, 'green');
-        bestMarker.bindPopup('Closest answer (<b>' + data.best_answer.name + ': ' + round(data.best_answer.distance) + ' km</b> away)').openPopup();
-    }
+    // var new_game_rules_html = '<ul style="text-align: left">';
+    // var new_game_rules_html = '<table>';
 
-    if (data.other_answers) {
-        for (i = 0; i < data.other_answers.length; i++) {
-            var tmp_answer = data.other_answers[i];
+    // Show best answer if there is one
+    // if (data.best_answer) {
+    //     var bestMarker = createMarker(data.best_answer.lat, data.best_answer.lng, 'green');
+    //     bestMarker.bindPopup('Closest answer (<b>' + data.best_answer.name + ': ' + round(data.best_answer.distance) + ' km</b> away)').openPopup();
+    //     new_game_rules_html += '<li><b>1.</b> ' + round(data.best_answer.distance) + 'km - ' + data.best_answer.name + '</li>';
+    // }
+
+    if (data.answers) {
+        for (i = 0; i < data.answers.length; i++) {
+            var tmp_answer = data.answers[i];
             if (tmp_answer.color) {
                 var tmp_Marker = createMarker(tmp_answer.lat, tmp_answer.lng, tmp_answer.color);
-            } else {
-                var tmp_Marker = createMarker(tmp_answer.lat, tmp_answer.lng, 'orange');
+            } else {  // TODO is this already handled in game_master.py? always sends a color and defaults to grey?
+                var tmp_Marker = createMarker(tmp_answer.lat, tmp_answer.lng, 'grey');
             }
-            tmp_Marker.bindPopup(tmp_answer.name + ': <b>' + round(tmp_answer.distance) + ' km</b> away');
+            if (i == 0) {
+                tmp_Marker.bindPopup('Closest answer (<b>' + tmp_answer.name + ': ' + round(tmp_answer.distance) + ' km</b> away)').openPopup();
+            } else {
+                tmp_Marker.bindPopup(tmp_answer.name + ': <b>' + round(tmp_answer.distance) + ' km</b> away');
+            }
+            // new_game_rules_html += '<li><b>' + (i + 1) + '.</b> '  + round(tmp_answer.distance) + 'km - ' + tmp_answer.name + '</li>';
         }
     }
 
@@ -277,6 +292,12 @@ function handleEndOfTurn(data) {
     // Update game rules
     $('#game_rules').html('Waiting for the next turn');
 
+    // new_game_rules_html += '</ul>'
+    // if (new_game_rules_html != '<ul style="text-align: left"></ul>') {
+    //     $('#game_rules').html(new_game_rules_html);
+    // } else {
+    //     $('#game_rules').html('Nobody answered. Waiting for the next turn');
+    // }
 }
 
 /**
@@ -315,17 +336,27 @@ function showPlayerResults(data) {
  * @param data
  */
 function handleLegendChanges(data) {
-    console.log(data);
-
     var new_html = ""
     for (i = 0; i < data.length; i++) {
-        tmp_color = data[i][0];
-        tmp_player_name = data[i][1];
+        var tmp_player_name = data[i][0];
+        var tmp_color = data[i][1];
+        var tmp_player_result = round(data[i][2]);
         new_html += '<img height="20" width="12" src="' + cdnUrl + '/images/marker-icon-' + tmp_color + '.png' + '" ' +
-            'alt="Player' + (i + 1) + '"/> <span id="legend_player_' + (i + 1) + '">' + tmp_player_name + '</span><br>';
+            'alt="Player' + (i + 1) + '"/> <span id="legend_player_' + (i + 1) + '">' + tmp_player_name + ' - ' +
+            tmp_player_result + 'km</span><br>';
     }
 
     $('#legend_players').html(new_html);
+}
+
+/**
+ * Receive color for the player to use in answer(e).
+ * @param data
+ */
+function handleColorInform(data) {
+    console.log('COLORINFORM');
+    console.log(data);
+    playerColor = data;
 }
 
 /**
@@ -344,7 +375,7 @@ function answer(e) {
     }
 
     // Mark the answer on the map
-    createMarker(e.latlng.lat, e.latlng.lng, 'blue');
+    createMarker(e.latlng.lat, e.latlng.lng, playerColor);
 
     // Emit answer event
     socket.emit('answer', e.latlng.lat, e.latlng.lng);
