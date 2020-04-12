@@ -1,8 +1,8 @@
 # How long is given to players to answer a question
-MAX_RESPONSE_TIME = 11
+MAX_RESPONSE_TIME = 15
 
 # Number of seconds between each turns
-TIME_BETWEEN_TURNS = 11
+TIME_BETWEEN_TURNS = 15
 
 # Number of answer used to compute ranking
 LEADERBOARD_ANSWER_COUNT = 10
