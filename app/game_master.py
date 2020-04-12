@@ -2,7 +2,6 @@
 
 from app import socketio, app
 from posio.game import Game
-from posio.game import colors_mapped
 
 
 class GameMaster:
@@ -113,7 +112,7 @@ class GameMaster:
                         'lng': p_answer.longitude,
                     }
                     if len(ranked_players) <= 6:
-                        p_emit['color'] = colors_mapped[p.sid][1]
+                        p_emit['color'] = self.game.colors_mapped[p.sid][1]
                     other_answers.append(p_emit)
 
                 turn_results['other_answers'] = other_answers
@@ -159,13 +158,10 @@ class GameMaster:
                 room=score['player'].sid)
 
     def update_legend(self):
-        from posio.game import col_map_changed
-        if col_map_changed:
-            app.logger.debug('Updating legend')
+        app.logger.debug('Updating legend')
 
-            socketio.emit(
-                'legend_changes',
-                {i + 1: player_name_and_color for i, player_name_and_color in enumerate(colors_mapped.values())}
-            )
-
-            col_map_changed = False
+        legend_changes = [(player_name_and_color[1], player_name_and_color[0]) for player_sid, player_name_and_color in self.game.colors_mapped.items()]
+        socketio.emit(
+            'legend_changes',
+            legend_changes
+        )

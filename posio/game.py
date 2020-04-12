@@ -5,9 +5,6 @@ import os
 from math import sqrt, pi
 from collections import namedtuple
 
-free_colors = ['orange', 'black', 'gold', 'violet', 'grey', 'yellow']
-colors_mapped = {}
-col_map_changed = False
 
 Answer = namedtuple('Answer', ['latitude', 'longitude'])
 Result = namedtuple('Result', ['distance', 'score'])
@@ -30,22 +27,22 @@ class Game:
         self.players = {}
         self.answers = []
         self.turn_number = 0
+        self.free_colors = ['orange', 'black', 'gold', 'violet', 'grey', 'yellow']
+        self.legend_color_order = reversed(self.free_colors)
+        self.colors_mapped = {}
 
     def add_player(self, player_sid, player_name):
-        global col_map_changed
         self.players[player_sid] = Player(player_sid, player_name)
-        if len(free_colors) > 0:
-            colors_mapped[player_sid] = (player_name, free_colors.pop())
-            col_map_changed = True
+        if len(self.free_colors) > 0:
+            self.colors_mapped[player_sid] = (player_name, self.free_colors.pop())
+            # self.col_map_changed = True  # TODO helpful to only update legend on changes or unnecessary?
 
     def remove_player(self, player_sid):
-        global col_map_changed
-
         # Get the player corresponding to the given sid and remove it
         if player_sid in self.players:
             del self.players[player_sid]
-            free_colors.append(colors_mapped.pop(player_sid)[1])
-            col_map_changed = True
+            self.free_colors.append(self.colors_mapped.pop(player_sid)[1])
+            # self.col_map_changed = True  # TODO helpful to only update legend on changes or unnecessary?
 
     def start_new_turn(self):
         # Reset answers for this turn

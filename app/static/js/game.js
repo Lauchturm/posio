@@ -83,12 +83,7 @@ function createMap() {
     legend.onAdd = function (map) {
         var div = L.DomUtil.create('div', 'info');
         div.id = 'legend';
-        div.innerHTML += '<img height="20" width="12" src="' + cdnUrl + '/images/marker-icon-yellow.png' + '" alt="Player6"/> <span id="legend_player_1">Nobody</span><br>';
-        div.innerHTML += '<img height="20" width="12" src="' + cdnUrl + '/images/marker-icon-grey.png' + '" alt="Player5"/> <span id="legend_player_2">Nobody</span><br>';
-        div.innerHTML += '<img height="20" width="12" src="' + cdnUrl + '/images/marker-icon-violet.png' + '" alt="Player4"/> <span id="legend_player_3">Nobody</span><br>';
-        div.innerHTML += '<img height="20" width="12" src="' + cdnUrl + '/images/marker-icon-gold.png' + '" alt="Player3"/> <span id="legend_player_4">Nobody</span><br>';
-        div.innerHTML += '<img height="20" width="12" src="' + cdnUrl + '/images/marker-icon-black.png' + '" alt="Player2"/> <span id="legend_player_5">Nobody</span><br>';
-        div.innerHTML += '<img height="20" width="12" src="' + cdnUrl + '/images/marker-icon-orange.png' + '" alt="Player1"/> <span id="legend_player_6">Nobody</span><br>';
+        div.innerHTML += '<div id="legend_players"></div>';
 
         div.innerHTML += '<img height="20" width="12" src="' + cdnUrl + '/images/marker-icon-blue.png' + '" alt="Your answer"/> Your answer<br>';
         div.innerHTML += '<img height="20" width="12" src="' + cdnUrl + '/images/marker-icon-red.png' + '" alt="Correct answer"/> Correct answer<br>';
@@ -315,14 +310,22 @@ function showPlayerResults(data) {
 
 }
 
+/**
+ * Display player_name next to colored icon in legend.
+ * @param data
+ */
 function handleLegendChanges(data) {
     console.log(data);
-    for (i = 1; i < 6; i++) {
-        $('#legend_player_' + i).html(data[i][0]);
-        console.log(i);
-    }
-    // $('#user_rank_value').html('(' + (data.player_rank + 1) + ' / ' + data.total_player + ' players)');
 
+    var new_html = ""
+    for (i = 0; i < data.length; i++) {
+        tmp_color = data[i][0];
+        tmp_player_name = data[i][1];
+        new_html += '<img height="20" width="12" src="' + cdnUrl + '/images/marker-icon-' + tmp_color + '.png' + '" ' +
+            'alt="Player' + (i + 1) + '"/> <span id="legend_player_' + (i + 1) + '">' + tmp_player_name + '</span><br>';
+    }
+
+    $('#legend_players').html(new_html);
 }
 
 /**
